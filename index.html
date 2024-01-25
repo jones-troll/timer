@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Timer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+
+    #timer {
+      font-size: 2em;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="timer">00:00</div>
+
+<script>
+  function startTimer(durationInSeconds) {
+    let timerElement = document.getElementById('timer');
+    let duration = durationInSeconds;
+    let minutes, seconds;
+
+    let timerInterval = setInterval(function () {
+      minutes = parseInt(duration / 60, 10);
+      seconds = parseInt(duration % 60, 10);
+
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      seconds = seconds < 10 ? '0' + seconds : seconds;
+
+      timerElement.textContent = minutes + ':' + seconds;
+
+      if (--duration < 0) {
+        clearInterval(timerInterval);
+        timerElement.textContent = 'Time is up!';
+      }
+    }, 1000);
+  }
+
+  // Parse query string parameters
+  function getQueryStringValue(key) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(key);
+  }
+
+  // Get the duration from the query string, default to 5 minutes if not provided
+  const durationParam = getQueryStringValue('duration') || 300;
+
+  // Start the timer with the provided duration
+  startTimer(parseInt(durationParam, 10));
+</script>
+
+</body>
+</html>
