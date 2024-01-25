@@ -50,7 +50,7 @@
   }
 
   // Get the duration from the query string, default to 5 minutes if not provided
-  const durationParam = getQueryStringValue('duration') || 300;
+  const durationParam = getQueryStringValue('t') || 300;
 
   // Start the timer with the provided duration
   startTimer(parseInt(durationParam, 10));
