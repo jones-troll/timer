@@ -44,16 +44,39 @@
   }
 
   // Parse query string parameters
-  function getQueryStringValue(key) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(key);
+  function parseDuration(input) {
+    const numericValue = parseInt(input, 10);
+
+    if (!isNaN(numericValue)) {
+      // Input is in seconds
+      return numericValue;
+    }
+
+    // Attempt to parse input in the format of 'Xmin' or 'Xhour'
+    const match = input.match(/^(\d+)\s*(min|hour)$/i);
+
+    if (match) {
+      const value = parseInt(match[1], 10);
+      const unit = match[2].toLowerCase();
+
+      if (unit === 'min') {
+        // Input is in minutes
+        return value * 60;
+      } else if (unit === 'hour') {
+        // Input is in hours
+        return value * 3600;
+      }
+    }
+
+    // Default to 5 minutes if parsing fails
+    return 300;
   }
 
   // Get the duration from the query string, default to 5 minutes if not provided
-  const durationParam = getQueryStringValue('t') || 300;
+  const durationParam = getQueryStringValue('t') || '5min';
 
-  // Start the timer with the provided duration
-  startTimer(parseInt(durationParam, 10));
+  // Parse the duration and start the timer
+  startTimer(parseDuration(durationParam));
 </script>
 
 </body>
