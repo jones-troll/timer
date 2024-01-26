@@ -9,22 +9,41 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 20px;
+
+  place-items: center;
+
     }
 
     #timer, #stopwatch {
       font-size: 2em;
       margin: 20px;
+	  display:inline;
     }
 
     #stopwatch {
       color: blue;
     }
+	span{
+	
+	}
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
   </style>
 </head>
 <body>
 
-<div id="timer">00:00</div>
-<div id="stopwatch">00:00</div>
+<table>
+<tr><td><span>Task Time:</span></td><td><div id="timer">00:00</div></td></tr>
+<tr><td><span>Time Spent:</span></td><td><div id="stopwatch">00:00</div></td></tr>
+</table>
 
 <script>
   function startTimer(durationInSeconds) {
@@ -110,5 +129,6 @@
     let stopwatchInterval = startStopwatch();
   }
 </script>
+
 </body>
 </html>
