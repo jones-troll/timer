@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Online Timer</title>
+  <title>Online Timer and Stopwatch</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,15 +11,20 @@
       margin: 20px;
     }
 
-    #timer {
+    #timer, #stopwatch {
       font-size: 2em;
       margin: 20px;
+    }
+
+    #stopwatch {
+      color: blue;
     }
   </style>
 </head>
 <body>
 
 <div id="timer">00:00</div>
+<div id="stopwatch">00:00</div>
 
 <script>
   function startTimer(durationInSeconds) {
@@ -47,6 +52,27 @@
         timerElement.textContent = 'Time is up!';
       }
     }, 1000);
+  }
+
+  function startStopwatch() {
+    let stopwatchElement = document.getElementById('stopwatch');
+    let elapsedSeconds = 0;
+    let hours, minutes, seconds;
+
+    let stopwatchInterval = setInterval(function () {
+      hours = parseInt(elapsedSeconds / 3600, 10);
+      minutes = parseInt((elapsedSeconds % 3600) / 60, 10);
+      seconds = parseInt(elapsedSeconds % 60, 10);
+
+      hours = hours < 10 ? '0' + hours : hours;
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      seconds = seconds < 10 ? '0' + seconds : seconds;
+
+      stopwatchElement.textContent = hours + ':' + minutes + ':' + seconds;
+      elapsedSeconds++;
+    }, 1000);
+
+    return stopwatchInterval;
   }
 
   // Parse query string parameters
@@ -79,6 +105,9 @@
 
     // Start the timer with the provided duration
     startTimer(durationInSeconds);
+
+    // Start the stopwatch
+    let stopwatchInterval = startStopwatch();
   }
 </script>
 </body>
