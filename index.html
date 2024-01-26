@@ -25,16 +25,22 @@
   function startTimer(durationInSeconds) {
     let timerElement = document.getElementById('timer');
     let duration = durationInSeconds;
-    let minutes, seconds;
+    let hours, minutes, seconds;
 
     let timerInterval = setInterval(function () {
-      minutes = parseInt(duration / 60, 10);
+      hours = parseInt(duration / 3600, 10);
+      minutes = parseInt((duration % 3600) / 60, 10);
       seconds = parseInt(duration % 60, 10);
 
+      hours = hours < 10 ? '0' + hours : hours;
       minutes = minutes < 10 ? '0' + minutes : minutes;
       seconds = seconds < 10 ? '0' + seconds : seconds;
 
-      timerElement.textContent = minutes + ':' + seconds;
+      if (hours > 0) {
+        timerElement.textContent = hours + ':' + minutes + ':' + seconds;
+      } else {
+        timerElement.textContent = minutes + ':' + seconds;
+      }
 
       if (--duration < 0) {
         clearInterval(timerInterval);
