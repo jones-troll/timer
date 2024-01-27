@@ -9,47 +9,50 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 20px;
-
-  place-items: center;
-
+      place-items: center;
     }
 
     #timer, #stopwatch {
       font-size: 2em;
       margin: 20px;
-	  display:inline;
+      display:inline;
     }
 
     #stopwatch {
       color: blue;
     }
-	span{
-	
-	}
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
+    span {
+    }
+    
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
 
 <table>
-<tr><td><span>Task Time:</span></td><td><div id="timer">00:00</div></td></tr>
-<tr><td><span>Time Spent:</span></td><td><div id="stopwatch">00:00</div></td></tr>
+  <tr><td><span>Task Title:</span></td><td><div id="taskTitle"></div></td></tr>
+  <tr><td><span>Task Time:</span></td><td><div id="timer">00:00</div></td></tr>
+  <tr><td><span>Time Spent:</span></td><td><div id="stopwatch">00:00</div></td></tr>
 </table>
 
 <script>
-  function startTimer(durationInSeconds) {
+  function startTimer(durationInSeconds, taskTitle) {
     let timerElement = document.getElementById('timer');
+    let taskTitleElement = document.getElementById('taskTitle');
     let duration = durationInSeconds;
     let hours, minutes, seconds;
+
+    taskTitleElement.textContent = taskTitle;
 
     let timerInterval = setInterval(function () {
       hours = parseInt(duration / 3600, 10);
@@ -69,6 +72,7 @@
       if (--duration < 0) {
         clearInterval(timerInterval);
         timerElement.textContent = 'Time is up!';
+        playAlarm();
       }
     }, 1000);
   }
@@ -94,6 +98,12 @@
     return stopwatchInterval;
   }
 
+function playAlarm() {
+  let audio = new Audio('alarm1.wav');
+  audio.play();
+}
+
+
   // Parse query string parameters
   function getQueryStringValue(key) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -102,6 +112,7 @@
 
   // Get the duration and unit from the query string, default to 5 minutes if not provided
   const timeParam = getQueryStringValue('t') || getQueryStringValue('s') || '300';
+  const titleParam = getQueryStringValue('title') || 'Task Title';
   const match = timeParam.match(/^(\d+)(min|hour|s)?$/);
 
   if (match) {
@@ -122,8 +133,8 @@
         durationInSeconds = duration;
     }
 
-    // Start the timer with the provided duration
-    startTimer(durationInSeconds);
+    // Start the timer with the provided duration and task title
+    startTimer(durationInSeconds, titleParam);
 
     // Start the stopwatch
     let stopwatchInterval = startStopwatch();
