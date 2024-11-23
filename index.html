@@ -15,16 +15,13 @@
     #timer, #stopwatch {
       font-size: 2em;
       margin: 20px;
-      display:inline;
+      display: inline;
     }
 
     #stopwatch {
       color: blue;
     }
 
-    span {
-    }
-    
     table {
       border-collapse: collapse;
       width: 100%;
@@ -38,108 +35,112 @@
   </style>
 </head>
 <body>
+  <table>
+    <tbody>
+      <tr>
+        <td><span>Task Title:</span></td>
+        <td><div id="taskTitle">Find videos that could be replicated by Ziko</div></td>
+      </tr>
+      <tr>
+        <td><span>Task Time:</span></td>
+        <td><div id="timer">01:00</div></td>
+      </tr>
+      <tr>
+        <td><span>Time Spent:</span></td>
+        <td><div id="stopwatch">00:04:24</div></td>
+      </tr>
+    </tbody>
+  </table>
 
-<table>
-  <tr><td><span>Task Title:</span></td><td><div id="taskTitle"></div></td></tr>
-  <tr><td><span>Task Time:</span></td><td><div id="timer">00:00</div></td></tr>
-  <tr><td><span>Time Spent:</span></td><td><div id="stopwatch">00:00</div></td></tr>
-</table>
+  <script>
+    function startTimer(durationInSeconds, taskTitle) {
+      let timerElement = document.getElementById('timer');
+      let taskTitleElement = document.getElementById('taskTitle');
+      let endTime = Date.now() + durationInSeconds * 1000;
 
-<script>
-  function startTimer(durationInSeconds, taskTitle) {
-    let timerElement = document.getElementById('timer');
-    let taskTitleElement = document.getElementById('taskTitle');
-    let duration = durationInSeconds;
-    let hours, minutes, seconds;
+      taskTitleElement.textContent = taskTitle;
 
-    taskTitleElement.textContent = taskTitle;
+      function updateTimer() {
+        let remainingTime = Math.max(0, endTime - Date.now());
+        let hours = Math.floor(remainingTime / (1000 * 60 * 60));
+        let minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+        let seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
-    let timerInterval = setInterval(function () {
-      hours = parseInt(duration / 3600, 10);
-      minutes = parseInt((duration % 3600) / 60, 10);
-      seconds = parseInt(duration % 60, 10);
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
 
-      hours = hours < 10 ? '0' + hours : hours;
-      minutes = minutes < 10 ? '0' + minutes : minutes;
-      seconds = seconds < 10 ? '0' + seconds : seconds;
+        timerElement.textContent = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
 
-      if (hours > 0) {
-        timerElement.textContent = hours + ':' + minutes + ':' + seconds;
-      } else {
-        timerElement.textContent = minutes + ':' + seconds;
+        if (remainingTime <= 0) {
+          timerElement.textContent = 'Time is up!';
+          playAlarm();
+          return; // Stop updating once the timer is complete
+        }
+
+        requestAnimationFrame(updateTimer);
       }
 
-      if (--duration < 0) {
-        clearInterval(timerInterval);
-        timerElement.textContent = 'Time is up!';
-        playAlarm();
-      }
-    }, 1000);
-  }
-
-  function startStopwatch() {
-    let stopwatchElement = document.getElementById('stopwatch');
-    let elapsedSeconds = 0;
-    let hours, minutes, seconds;
-
-    let stopwatchInterval = setInterval(function () {
-      hours = parseInt(elapsedSeconds / 3600, 10);
-      minutes = parseInt((elapsedSeconds % 3600) / 60, 10);
-      seconds = parseInt(elapsedSeconds % 60, 10);
-
-      hours = hours < 10 ? '0' + hours : hours;
-      minutes = minutes < 10 ? '0' + minutes : minutes;
-      seconds = seconds < 10 ? '0' + seconds : seconds;
-
-      stopwatchElement.textContent = hours + ':' + minutes + ':' + seconds;
-      elapsedSeconds++;
-    }, 1000);
-
-    return stopwatchInterval;
-  }
-
-function playAlarm() {
-  let audio = new Audio('alarm1.wav');
-  audio.play();
-}
-
-
-  // Parse query string parameters
-  function getQueryStringValue(key) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(key);
-  }
-
-  // Get the duration and unit from the query string, default to 5 minutes if not provided
-  const timeParam = getQueryStringValue('t') || getQueryStringValue('s') || '300';
-  const titleParam = getQueryStringValue('title') || 'Task Title';
-  const match = timeParam.match(/^(\d+)(min|hour|s)?$/);
-
-  if (match) {
-    const duration = parseInt(match[1], 10);
-    const unit = match[2] || 's';
-
-    let durationInSeconds;
-
-    switch (unit) {
-      case 'min':
-        durationInSeconds = duration * 60;
-        break;
-      case 'hour':
-        durationInSeconds = duration * 60 * 60;
-        break;
-      case 's':
-      default:
-        durationInSeconds = duration;
+      requestAnimationFrame(updateTimer);
     }
 
-    // Start the timer with the provided duration and task title
-    startTimer(durationInSeconds, titleParam);
+    function startStopwatch() {
+      let stopwatchElement = document.getElementById('stopwatch');
+      let startTime = Date.now();
 
-    // Start the stopwatch
-    let stopwatchInterval = startStopwatch();
-  }
-</script>
+      function updateStopwatch() {
+        let elapsedTime = Date.now() - startTime;
+        let hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+        let minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+        let seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
 
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+
+        stopwatchElement.textContent = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
+        requestAnimationFrame(updateStopwatch);
+      }
+
+      requestAnimationFrame(updateStopwatch);
+    }
+
+    function playAlarm() {
+      let audio = new Audio('alarm1.wav');
+      audio.play();
+    }
+
+    // Parse query string parameters
+    function getQueryStringValue(key) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(key);
+    }
+
+    const timeParam = getQueryStringValue('t') || getQueryStringValue('s') || '60';
+    const titleParam = getQueryStringValue('title') || 'Task Title';
+    const match = timeParam.match(/^(\d+)(min|hour|s)?$/);
+
+    if (match) {
+      const duration = parseInt(match[1], 10);
+      const unit = match[2] || 's';
+
+      let durationInSeconds;
+
+      switch (unit) {
+        case 'min':
+          durationInSeconds = duration * 60;
+          break;
+        case 'hour':
+          durationInSeconds = duration * 60 * 60;
+          break;
+        case 's':
+        default:
+          durationInSeconds = duration;
+      }
+
+      startTimer(durationInSeconds, titleParam);
+      startStopwatch();
+    }
+  </script>
 </body>
 </html>
