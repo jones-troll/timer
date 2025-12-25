@@ -11,22 +11,18 @@
       margin: 20px;
       place-items: center;
     }
-
     #timer, #stopwatch {
       font-size: 2em;
       margin: 20px;
       display: inline;
     }
-
     #stopwatch {
       color: blue;
     }
-
     table {
       border-collapse: collapse;
       width: 100%;
     }
-
     th, td {
       border: 1px solid #ddd;
       padding: 8px;
@@ -39,83 +35,130 @@
     <tbody>
       <tr>
         <td><span>Task Title:</span></td>
-        <td><div id="taskTitle">Find videos that could be replicated by Ziko</div></td>
+        <td><div id="taskTitle">Loading...</div></td>
       </tr>
       <tr>
         <td><span>Task Time:</span></td>
-        <td><div id="timer">01:00</div></td>
+        <td><div id="timer">00:00</div></td>
       </tr>
       <tr>
         <td><span>Time Spent:</span></td>
-        <td><div id="stopwatch">00:04:24</div></td>
+        <td><div id="stopwatch">00:00:00</div></td>
       </tr>
     </tbody>
   </table>
 
   <script>
-    function startTimer(durationInSeconds, taskTitle) {
-      let timerElement = document.getElementById('timer');
-      let taskTitleElement = document.getElementById('taskTitle');
-      let endTime = Date.now() + durationInSeconds * 1000;
+    /**
+     * 1. THE WEB WORKER
+     * This code runs in a separate thread. Even if Brave "freezes" 
+     * this tab, the Worker keeps running the logic.
+     */
+    const blob = new Blob([`
+      let timerId = null;
+      let swId = null;
 
-      taskTitleElement.textContent = taskTitle;
-
-      function updateTimer() {
-        let remainingTime = Math.max(0, endTime - Date.now());
-        let hours = Math.floor(remainingTime / (1000 * 60 * 60));
-        let minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-        let seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-
-        hours = hours < 10 ? '0' + hours : hours;
-        minutes = minutes < 10 ? '0' + minutes : minutes;
-        seconds = seconds < 10 ? '0' + seconds : seconds;
-
-        timerElement.textContent = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
-
-        if (remainingTime <= 0) {
-          timerElement.textContent = 'Time is up!';
-          playAlarm();
-          return; // Stop updating once the timer is complete
+      self.onmessage = function(e) {
+        if (e.data.action === 'startTimer') {
+          const endTime = e.data.endTime;
+          timerId = setInterval(() => {
+            const now = Date.now();
+            const remaining = endTime - now;
+            if (remaining <= 0) {
+              self.postMessage({ type: 'TIMER_DONE' });
+              clearInterval(timerId);
+            } else {
+              self.postMessage({ type: 'TIMER_TICK', remaining });
+            }
+          }, 500);
         }
 
-        requestAnimationFrame(updateTimer);
-      }
+        if (e.data.action === 'startStopwatch') {
+          const startTime = e.data.startTime;
+          swId = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            self.postMessage({ type: 'SW_TICK', elapsed });
+          }, 1000);
+        }
+      };
+    `], { type: 'application/javascript' });
 
-      requestAnimationFrame(updateTimer);
+    const worker = new Worker(URL.createObjectURL(blob));
+
+    /**
+     * 2. MAIN PAGE LOGIC
+     */
+    function startTimer(durationInSeconds, taskTitle) {
+      const timerElement = document.getElementById('timer');
+      const taskTitleElement = document.getElementById('taskTitle');
+      const endTime = Date.now() + (durationInSeconds * 1000);
+      
+      taskTitleElement.textContent = taskTitle;
+
+      // Start the worker
+      worker.postMessage({ action: 'startTimer', endTime });
+
+      worker.addEventListener('message', function(e) {
+        if (e.data.type === 'TIMER_TICK') {
+          updateTimerDisplay(e.data.remaining);
+        } else if (e.data.type === 'TIMER_DONE') {
+          timerElement.textContent = 'Time is up!';
+          document.title = "!!! TIME IS UP !!!";
+          playAlarm();
+        }
+      });
     }
 
     function startStopwatch() {
-      let stopwatchElement = document.getElementById('stopwatch');
-      let startTime = Date.now();
+      const startTime = Date.now();
+      worker.postMessage({ action: 'startStopwatch', startTime });
 
-      function updateStopwatch() {
-        let elapsedTime = Date.now() - startTime;
-        let hours = Math.floor(elapsedTime / (1000 * 60 * 60));
-        let minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
-        let seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
+      worker.addEventListener('message', function(e) {
+        if (e.data.type === 'SW_TICK') {
+          updateStopwatchDisplay(e.data.elapsed);
+        }
+      });
+    }
 
-        hours = hours < 10 ? '0' + hours : hours;
-        minutes = minutes < 10 ? '0' + minutes : minutes;
-        seconds = seconds < 10 ? '0' + seconds : seconds;
+    function updateTimerDisplay(ms) {
+      const timerElement = document.getElementById('timer');
+      const { h, m, s } = formatMs(ms);
+      const display = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+      timerElement.textContent = display;
+      document.title = `(${display}) Timer`;
+    }
 
-        stopwatchElement.textContent = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
-        requestAnimationFrame(updateStopwatch);
-      }
+    function updateStopwatchDisplay(ms) {
+      const stopwatchElement = document.getElementById('stopwatch');
+      const { h, m, s } = formatMs(ms);
+      stopwatchElement.textContent = `${h}:${m}:${s}`;
+    }
 
-      requestAnimationFrame(updateStopwatch);
+    function formatMs(ms) {
+      const hours = Math.floor(ms / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      return {
+        h: hours < 10 ? '0' + hours : hours,
+        m: minutes < 10 ? '0' + minutes : minutes,
+        s: seconds < 10 ? '0' + seconds : seconds
+      };
     }
 
     function playAlarm() {
-      let audio = new Audio('alarm1.wav');
-      audio.play();
+      const audio = new Audio('alarm1.wav');
+      // Adding a catch block to log if Brave still blocks it
+      audio.play().catch(err => {
+        console.error("Autoplay blocked. Ensure 'Autoplay: Allow' is set in Site Settings.", err);
+      });
     }
 
-    // Parse query string parameters
     function getQueryStringValue(key) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(key);
     }
 
+    // Initialization
     const timeParam = getQueryStringValue('t') || getQueryStringValue('s') || '60';
     const titleParam = getQueryStringValue('title') || 'Task Title';
     const match = timeParam.match(/^(\d+)(min|hour|s)?$/);
@@ -123,20 +166,9 @@
     if (match) {
       const duration = parseInt(match[1], 10);
       const unit = match[2] || 's';
-
-      let durationInSeconds;
-
-      switch (unit) {
-        case 'min':
-          durationInSeconds = duration * 60;
-          break;
-        case 'hour':
-          durationInSeconds = duration * 60 * 60;
-          break;
-        case 's':
-        default:
-          durationInSeconds = duration;
-      }
+      let durationInSeconds = duration;
+      if (unit === 'min') durationInSeconds *= 60;
+      if (unit === 'hour') durationInSeconds *= 3600;
 
       startTimer(durationInSeconds, titleParam);
       startStopwatch();
